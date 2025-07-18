@@ -1,185 +1,123 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
     role: 'officer',
-    panchayat: ''
+    panchayat: '',
+    aadhaar: '',
+    phone: '',
+    address: '',
+    age: '',
+    gender: '',
+    category: '',
+    income: '',
+    education: '',
+    hasHouse: false,
+    landSize: ''
   });
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value, type, checked } = e.target;
+    setForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    
     setLoading(true);
-    
-    const userData = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      role: formData.role,
-      panchayat: formData.panchayat
-    };
-    
-    const success = await register(userData);
-    if (success) {
-      navigate('/');
+    try {
+      // Prepare data based on role
+      let data = {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role
+      };
+      if (form.role === 'resident') {
+        data = {
+          ...data,
+          aadhaar: form.aadhaar,
+          phone: form.phone,
+          address: form.address,
+          age: form.age,
+          gender: form.gender,
+          category: form.category,
+          income: form.income,
+          education: form.education,
+          hasHouse: form.hasHouse,
+          landSize: form.landSize
+        };
+      } else {
+        data = {
+          ...data,
+          panchayat: form.panchayat
+        };
+      }
+      await axios.post('/api/auth/register', data);
+      toast.success('Registration successful! Please login.');
+      navigate('/login');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-12 w-12 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">SG</span>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Join SmartGraama to manage your Panchayat
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="form-label">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="input-field"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="input-field"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="panchayat" className="form-label">
-                Panchayat Name
-              </label>
-              <input
-                id="panchayat"
-                name="panchayat"
-                type="text"
-                required
-                className="input-field"
-                placeholder="Enter panchayat name"
-                value={formData.panchayat}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="role" className="form-label">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                className="input-field"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                <option value="officer">Panchayat Officer</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="form-label">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="input-field"
-                placeholder="Enter password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="confirmPassword" className="form-label">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="input-field"
-                placeholder="Confirm password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create account'}
-            </button>
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500">
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </form>
-      </div>
+    <div className="max-w-md mx-auto mt-10 card">
+      <h2 className="text-xl font-bold mb-4">User Registration</h2>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input className="input-field" name="name" placeholder="Name" value={form.name} onChange={handleChange} required />
+        <input className="input-field" name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
+        <input className="input-field" name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+        <select className="input-field" name="role" value={form.role} onChange={handleChange} required>
+          <option value="officer">Panchayat Officer</option>
+          <option value="admin">Admin</option>
+          <option value="resident">Resident</option>
+        </select>
+        {(form.role === 'officer' || form.role === 'admin') && (
+          <input className="input-field" name="panchayat" placeholder="Panchayat Name" value={form.panchayat} onChange={handleChange} required />
+        )}
+        {form.role === 'resident' && (
+          <>
+            <input className="input-field" name="aadhaar" placeholder="Aadhaar Number" value={form.aadhaar} onChange={handleChange} required />
+            <input className="input-field" name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} required />
+            <input className="input-field" name="address" placeholder="Address" value={form.address} onChange={handleChange} required />
+            <input className="input-field" name="age" type="number" placeholder="Age" value={form.age} onChange={handleChange} required />
+            <select className="input-field" name="gender" value={form.gender} onChange={handleChange} required>
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            <select className="input-field" name="category" value={form.category} onChange={handleChange} required>
+              <option value="">Select Category</option>
+              <option value="General">General</option>
+              <option value="SC">SC</option>
+              <option value="ST">ST</option>
+              <option value="OBC">OBC</option>
+            </select>
+            <input className="input-field" name="income" type="number" placeholder="Annual Income" value={form.income} onChange={handleChange} required />
+            <input className="input-field" name="education" placeholder="Education" value={form.education} onChange={handleChange} />
+            <label className="flex items-center">
+              <input type="checkbox" name="hasHouse" checked={form.hasHouse} onChange={handleChange} />
+              <span className="ml-2">Owns a House</span>
+            </label>
+            <input className="input-field" name="landSize" type="number" placeholder="Land Size (acres)" value={form.landSize} onChange={handleChange} />
+          </>
+        )}
+        <button className="btn-primary w-full" type="submit" disabled={loading}>{loading ? 'Registering...' : 'Register'}</button>
+      </form>
     </div>
   );
 };
